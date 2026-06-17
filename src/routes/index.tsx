@@ -1,29 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { lazy, Suspense } from "react";
+
+const JazzBar = lazy(() => import("@/components/jazzbar/JazzBar"));
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Your App" },
-      { name: "description", content: "Replace this with a one-sentence description of your app." },
-      { property: "og:title", content: "Your App" },
-      { property: "og:description", content: "Replace this with a one-sentence description of your app." },
+      { title: "Jazz Bar — A Cozy Focus Lounge" },
+      { name: "description", content: "A browser-based focus app themed as a cozy ASCII jazz lounge. Start a session and watch your bar slowly come to life." },
+      { property: "og:title", content: "Jazz Bar — A Cozy Focus Lounge" },
+      { property: "og:description", content: "Pomodoro focus timer with a progressive ASCII jazz bar scene, layered ambient atmosphere, and particle effects." },
     ],
   }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
+    <Suspense
+      fallback={
+        <div className="flex h-screen w-screen items-center justify-center bg-background font-mono text-sm uppercase tracking-[0.4em] text-amber">
+          ~ * jazz bar * ~
+        </div>
+      }
     >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+      <JazzBar />
+    </Suspense>
   );
 }
