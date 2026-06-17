@@ -245,16 +245,34 @@ export default function JazzBar() {
         </div>
       </header>
 
-      {/* Center scene */}
-      <main className="relative flex h-full w-full flex-col items-center justify-center">
-        <pre key={stage} className="scene-art fade-in select-none">
-          {SCENE_STAGES[stage]}
-        </pre>
+      {/* Full-bleed pixel-art scene with crossfade */}
+      <div className="absolute inset-0 z-0 overflow-hidden bg-[oklch(0.08_0.012_50)]">
+        {SCENE_STAGES.map((src, i) => (
+          <img
+            key={i}
+            src={src}
+            alt=""
+            aria-hidden
+            width={1536}
+            height={896}
+            decoding="async"
+            fetchPriority={i === 0 ? "high" : "low"}
+            loading={i === 0 ? "eager" : "lazy"}
+            className={`pixel-scene scene-breathe transition-opacity duration-[1600ms] ease-out ${
+              i === stage ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        ))}
+        <div className="warm-glow" />
+        <div className="crt-overlay" />
+      </div>
 
+      {/* Center scene */}
+      <main className="relative z-10 flex h-full w-full flex-col items-center justify-end pb-32">
         <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
 
         <div className="relative z-10 mt-6 max-w-2xl px-6 text-center">
-          <p className="font-sans text-base italic text-cream/90 md:text-lg">
+          <p className="font-sans text-base italic text-cream/95 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] md:text-lg">
             {typed}
             <span className="ml-0.5 inline-block w-2 animate-pulse text-amber">▍</span>
           </p>
@@ -262,20 +280,20 @@ export default function JazzBar() {
 
         <div
           key={pulseKey}
-          className="tick-pulse mt-4 font-mono text-5xl font-bold text-amber md:text-6xl"
-          style={{ textShadow: "0 0 20px rgba(212,165,116,0.25)" }}
+          className="tick-pulse mt-4 font-mono text-6xl font-bold text-amber md:text-7xl"
+          style={{ textShadow: "0 0 24px rgba(212,165,116,0.45), 0 2px 12px rgba(0,0,0,0.7)" }}
         >
           {fmt(remaining)}
         </div>
 
-        <div className="mt-2 h-1 w-64 overflow-hidden rounded-full bg-[oklch(0.22_0.014_50)]">
+        <div className="mt-3 h-1 w-64 overflow-hidden rounded-full bg-black/40 backdrop-blur-sm">
           <div
             className="h-full bg-amber transition-all duration-300"
             style={{ width: `${Math.min(100, progress * 100)}%` }}
           />
         </div>
 
-        <div className="mt-2 text-xs uppercase tracking-[0.3em] text-dim">
+        <div className="mt-2 text-xs uppercase tracking-[0.3em] text-cream/70 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]">
           stage {stage + 1} / {STAGE_COUNT}
         </div>
       </main>

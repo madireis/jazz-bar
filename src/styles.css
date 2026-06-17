@@ -104,14 +104,46 @@
   border: 1px solid rgba(212, 165, 116, 0.12);
 }
 
-.scene-art {
-  font-family: var(--font-mono);
-  color: var(--amber);
-  white-space: pre;
-  line-height: 1.05;
-  letter-spacing: 0;
-  text-shadow: 0 0 12px rgba(212, 165, 116, 0.18);
-  font-size: 14px;
+/* Pixel-art scene: full-bleed, crisp pixels, slow ken-burns breathing */
+.pixel-scene {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: opacity, transform, filter;
+}
+@keyframes scene-breathe {
+  0%   { transform: scale(1.04) translate(0, 0); filter: brightness(0.95) saturate(1.05); }
+  50%  { transform: scale(1.08) translate(-0.8%, -0.4%); filter: brightness(1.05) saturate(1.15); }
+  100% { transform: scale(1.04) translate(0, 0); filter: brightness(0.95) saturate(1.05); }
+}
+.scene-breathe { animation: scene-breathe 18s ease-in-out infinite; }
+@keyframes scene-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.scene-fade-in { animation: scene-fade-in 1.6s ease-out forwards; }
+
+.crt-overlay {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.6) 100%),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.18) 0px,
+      rgba(0,0,0,0.18) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  mix-blend-mode: multiply;
+}
+.warm-glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 60%, rgba(232,166,76,0.18), transparent 65%);
+  mix-blend-mode: screen;
 }
 
 @media (prefers-reduced-motion: reduce) {
