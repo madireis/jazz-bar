@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SCENE_STAGES, STAGE_COUNT, STAGE_INTERVAL_MS, stageForElapsed } from "@/lib/jazzbar/scene";
-import { randomQuote, type } from "@/lib/jazzbar/quotes-helpers";
+import { SCENE_STAGES, STAGE_COUNT, stageForElapsed } from "@/lib/jazzbar/scene";
 import { QUOTES, randomQuote as pickQuote } from "@/lib/jazzbar/quotes";
 import {
   DEFAULT_SETTINGS,
