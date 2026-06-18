@@ -11,6 +11,8 @@ import {
 } from "@/lib/jazzbar/storage";
 import { sfx, unlockAudio } from "@/lib/jazzbar/sfx";
 import { createParticleSystem } from "@/lib/jazzbar/particles";
+import MusicPicker from "@/components/jazzbar/MusicPicker";
+import bgVideoAsset from "@/assets/jazzbar/jazz-bar-loop.mp4.asset.json";
 
 type Phase = "idle" | "work" | "break" | "paused";
 
