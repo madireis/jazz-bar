@@ -1,79 +1,216 @@
 <div align="center">
-  <img src="public/bar-bg.jpeg" alt="Jazz Bar Background" width="100%" style="border-radius: 12px; margin-bottom: 20px;">
-  
-  <h1>🎷 Jazz Bar — A Cozy Focus Lounge</h1>
-  
-  <p>
-    <strong>A browser-based focus app themed as a cozy pixel-art jazz lounge.</strong>
-  </p>
-  
-  <p>
-    <a href="#features">Features</a> •
-    <a href="#installation">Installation</a> •
-    <a href="#usage">Usage</a> •
-    <a href="#tech-stack">Tech Stack</a>
-  </p>
+
+# 🎷 JAZZ BAR
+
+### *A Late-Night Lounge for Deep Focus*
+
+*Rain tapping against the window. A vinyl record spinning softly. The fireplace crackling in the corner. One more task before closing time.*
+
+<br>
+
+<img src="11.jpg" width="31%" alt="Jazz Bar">
+<img src="12.jpg" width="31%" alt="Jazz Bar">
+<img src="13.jpg" width="31%" alt="Jazz Bar">
+
+<br><br>
+
+![React](https://img.shields.io/badge/React-19-black?style=for-the-badge)
+![Vite](https://img.shields.io/badge/Vite-Fast-black?style=for-the-badge)
+![PWA](https://img.shields.io/badge/PWA-Ready-black?style=for-the-badge)
+![Tailwind](https://img.shields.io/badge/Tailwind-v4-black?style=for-the-badge)
+
+<br>
+
+### 🍷 Productivity shouldn't feel like work.
+
 </div>
 
 ---
 
-## 🥃 Welcome to the Lounge
+## 🌙 The Story
 
-**Jazz Bar** is an immersive productivity tool designed to help you enter deep work without the clinical, sterile feel of traditional Pomodoro timers. Sit back, pick your favorite jazz track, let the ambient rain and fireplace crackle, and watch your bar slowly come to life as you focus.
+Most productivity apps feel like spreadsheets wearing a timer.
 
-### ✨ Features
+**Jazz Bar** takes a different approach.
 
-- **Immersive Environment**: Beautiful pixel-art background loop that reacts to your session.
-- **Layered Ambience Engine**: Mix your perfect background noise. Adjust the volume of the crackling fireplace, the pouring rain, and the low murmur of the bar independently.
-- **Integrated Music Player**: Built-in curated lo-fi and jazz tracks to keep you in the zone.
-- **Dynamic Session Phases**: Fluidly transitions between Work and Break phases, updating the on-screen "stage" and visualizer particles.
-- **Zen Mode**: Press `Z` to hide all UI elements except the timer and immerse yourself completely in the environment.
-- **Daily Receipt**: A beautiful glassmorphic modal that tracks your session history, displaying tasks completed and total deep work minutes accumulated.
-- **PWA Ready**: Installable directly to your desktop or mobile device as a Progressive Web App for a native, distraction-free experience.
+It's a digital jazz lounge built for people who focus better when the atmosphere feels alive.
 
-## 🚀 Installation
+Instead of cold dashboards and endless notifications, you get:
 
-Jazz Bar is built with Vite, React, and TanStack Router.
+- 🎹 Soft jazz drifting through the room
+- 🌧️ Rain rolling across the windows
+- 🔥 A warm fireplace in the background
+- 🥃 A cozy pixel-art bar slowly coming to life
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/jazz-bar.git
-   cd jazz-bar
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Start the lounge**
-   ```bash
-   npm run dev
-   ```
-   *The app will be available at `http://localhost:5173`.*
-
-## ⌨️ Shortcuts
-
-Navigate the bar without reaching for your mouse:
-
-| Key | Action |
-| :--- | :--- |
-| `Space` | Start or Pause the current session |
-| `Z` | Toggle **Zen Mode** (hides all UI) |
-| `M` | Open the Music Picker |
-| `A` | Toggle Ambience (Mute/Unmute all ambient sounds) |
-| `F` | Toggle Fullscreen mode |
-| `Esc` | End the current session |
-
-## 🛠️ Tech Stack
-
-- **Framework**: [React 19](https://react.dev/)
-- **Routing**: [TanStack Router](https://tanstack.com/router/latest)
-- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) with custom Glassmorphism utilities
-- **Build Tool**: [Vite](https://vitejs.dev/)
-- **Audio Engine**: Custom HTML5 Audio pooling architecture for gapless looping
+Open the app, disappear into the music, and let the hours melt away.
 
 ---
+
+## ✨ What Makes It Special
+
+### 🎷 Live Jazz Atmosphere
+
+Transform your workspace into a cozy late-night bar.
+
+Every visual element is designed to create calm, focus, and immersion.
+
+---
+
+### 🎵 Built-In Jazz & Lo-Fi Radio
+
+No need to open Spotify.
+
+Switch between carefully selected stations and let the music carry your session.
+
+---
+
+### 🌧️ Dynamic Ambience Mixer
+
+Build your perfect environment.
+
+Mix and match:
+
+- Rain
+- Fireplace
+- Bar chatter
+- Ambient room noise
+
+Each sound has its own volume control.
+
+---
+
+### ⏳ Beautiful Focus Sessions
+
+Work and break cycles flow naturally through the experience.
+
+No harsh interruptions.
+
+Just smooth transitions and subtle visual feedback.
+
+---
+
+### 🌙 Zen Mode
+
+Press **Z** and everything fades away.
+
+No menus.
+
+No buttons.
+
+No distractions.
+
+Just you, the music, and the timer.
+
+---
+
+### 🧾 Daily Receipt
+
+Every day ends with a receipt from the bar.
+
+Track:
+
+- Focused minutes
+- Sessions completed
+- Daily productivity streaks
+
+A small ritual that makes progress feel rewarding.
+
+---
+
+### 📱 Install Like a Native App
+
+Available anywhere.
+
+Desktop. Laptop. Tablet. Phone.
+
+One click and Jazz Bar lives on your device.
+
+---
+
+## 🚀 Getting Started
+
+### Clone
+
+```bash
+git clone https://github.com/yourusername/jazz-bar.git
+cd jazz-bar
+```
+
+### Install
+
+```bash
+npm install
+```
+
+### Start
+
+```bash
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173
+```
+
+Pour yourself a drink.
+
+The lounge is open.
+
+---
+
+## ⌨️ Controls
+
+| Key | Action |
+|------|---------|
+| `Space` | Start / Pause Session |
+| `Z` | Toggle Zen Mode |
+| `M` | Open Music Picker |
+| `A` | Toggle Ambience |
+| `F` | Fullscreen |
+| `Esc` | End Session |
+
+---
+
+## 🛠 Built With
+
+```txt
+⚛ React 19
+⚡ Vite
+🎨 Tailwind CSS v4
+🧭 TanStack Router
+🔊 Custom Audio Engine
+📱 Progressive Web App
+```
+
+---
+
+## 🎯 Perfect For
+
+```txt
+☕ Students
+💻 Developers
+📝 Writers
+🎨 Designers
+📚 Researchers
+🌙 Night Owls
+```
+
+---
+
 <div align="center">
-  <i>Stay focused. Stay cozy.</i>
+
+## 🎺 Last Call
+
+*"The rain keeps falling."*
+
+*"The record keeps spinning."*
+
+*"Your work keeps moving."*
+
+### Welcome to Jazz Bar.
+
+🍷 🎷 🌧️ 🔥
+
 </div>
