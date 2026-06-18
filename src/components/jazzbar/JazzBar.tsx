@@ -248,24 +248,16 @@ export default function JazzBar() {
         </div>
       </header>
 
-      {/* Full-bleed pixel-art scene with crossfade */}
+      {/* Full-bleed pixel-art looping video scene */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-[oklch(0.08_0.012_50)]">
-        {SCENE_STAGES.map((src, i) => (
-          <img
-            key={i}
-            src={src}
-            alt=""
-            aria-hidden
-            width={1536}
-            height={896}
-            decoding="async"
-            fetchPriority={i === 0 ? "high" : "low"}
-            loading={i === 0 ? "eager" : "lazy"}
-            className={`pixel-scene scene-breathe transition-opacity duration-[1600ms] ease-out ${
-              i === stage ? "opacity-100" : "opacity-0"
-            }`}
-          />
-        ))}
+        <video
+          src={bgVideoAsset.url}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="bg-video scene-breathe"
+        />
         <div className="warm-glow" />
         <div className="crt-overlay" />
       </div>
