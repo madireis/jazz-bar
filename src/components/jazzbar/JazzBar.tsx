@@ -50,6 +50,7 @@ export default function JazzBar() {
   const [controlsVisible, setControlsVisible] = useState(true);
   const [rainActive] = useState(() => Math.random() < 0.05);
   const [pulseKey, setPulseKey] = useState(0);
+  const [musicOpen, setMusicOpen] = useState(false);
 
   const lastTickRef = useRef<number>(0);
   const idleTimerRef = useRef<number | null>(null);
