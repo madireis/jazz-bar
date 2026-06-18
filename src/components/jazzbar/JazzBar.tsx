@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SCENE_STAGES, STAGE_COUNT, stageForElapsed } from "@/lib/jazzbar/scene";
+import { STAGE_COUNT, stageForElapsed } from "@/lib/jazzbar/scene";
 import { QUOTES, randomQuote as pickQuote } from "@/lib/jazzbar/quotes";
 import {
   DEFAULT_SETTINGS,
@@ -11,6 +11,8 @@ import {
 } from "@/lib/jazzbar/storage";
 import { sfx, unlockAudio } from "@/lib/jazzbar/sfx";
 import { createParticleSystem } from "@/lib/jazzbar/particles";
+import MusicPicker from "@/components/jazzbar/MusicPicker";
+import bgVideoAsset from "@/assets/jazzbar/jazz-bar-loop.mp4.asset.json";
 
 type Phase = "idle" | "work" | "break" | "paused";
 
@@ -48,6 +50,7 @@ export default function JazzBar() {
   const [controlsVisible, setControlsVisible] = useState(true);
   const [rainActive] = useState(() => Math.random() < 0.05);
   const [pulseKey, setPulseKey] = useState(0);
+  const [musicOpen, setMusicOpen] = useState(false);
 
   const lastTickRef = useRef<number>(0);
   const idleTimerRef = useRef<number | null>(null);
@@ -194,7 +197,7 @@ export default function JazzBar() {
       } else if (e.key === "Escape") {
         endSession();
       } else if (e.key === "m") {
-        setSettings((s) => ({ ...s, musicMuted: !s.musicMuted }));
+        setMusicOpen((o) => !o);
       } else if (e.key === "a") {
         setSettings((s) => ({ ...s, ambientMuted: !s.ambientMuted }));
       }
@@ -245,24 +248,16 @@ export default function JazzBar() {
         </div>
       </header>
 
-      {/* Full-bleed pixel-art scene with crossfade */}
+      {/* Full-bleed pixel-art looping video scene */}
       <div className="absolute inset-0 z-0 overflow-hidden bg-[oklch(0.08_0.012_50)]">
-        {SCENE_STAGES.map((src, i) => (
-          <img
-            key={i}
-            src={src}
-            alt=""
-            aria-hidden
-            width={1536}
-            height={896}
-            decoding="async"
-            fetchPriority={i === 0 ? "high" : "low"}
-            loading={i === 0 ? "eager" : "lazy"}
-            className={`pixel-scene scene-breathe transition-opacity duration-[1600ms] ease-out ${
-              i === stage ? "opacity-100" : "opacity-0"
-            }`}
-          />
-        ))}
+        <video
+          src={bgVideoAsset.url}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="bg-video scene-breathe"
+        />
         <div className="warm-glow" />
         <div className="crt-overlay" />
       </div>
@@ -361,6 +356,13 @@ export default function JazzBar() {
           )}
           <span className="mx-2 h-4 w-px bg-dim" />
           <button
+            onClick={() => setMusicOpen((o) => !o)}
+            className={`rounded-md px-3 py-1.5 font-mono ${musicOpen ? "bg-amber/20 text-amber" : "text-gold hover:bg-amber/10"}`}
+            title="Open music picker (M)"
+          >
+            ♪ music
+          </button>
+          <button
             onClick={() => setSettings((s) => ({ ...s, ambientMuted: !s.ambientMuted }))}
             className={`rounded-md px-3 py-1.5 font-mono ${settings.ambientMuted ? "text-dim" : "text-gold"}`}
             title="Toggle ambience (A)"
@@ -380,6 +382,8 @@ export default function JazzBar() {
       <div className="pointer-events-none fixed bottom-2 right-3 z-30 font-mono text-[10px] uppercase tracking-widest text-dim">
         space · start/pause &nbsp; m · music &nbsp; a · ambience &nbsp; esc · end
       </div>
+
+      <MusicPicker open={musicOpen} onClose={() => setMusicOpen(false)} muted={settings.musicMuted} />
     </div>
   );
 }
