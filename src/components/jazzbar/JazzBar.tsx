@@ -256,7 +256,7 @@ export default function JazzBar() {
           loop
           muted
           playsInline
-          className="bg-video scene-breathe"
+          className="bg-video"
         />
         <div className="warm-glow" />
         <div className="crt-overlay" />
