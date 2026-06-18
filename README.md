@@ -8,9 +8,9 @@
 
 <br>
 
-<img src="11.jpg" width="31%" alt="Jazz Bar">
-<img src="12.jpg" width="31%" alt="Jazz Bar">
-<img src="13.jpg" width="31%" alt="Jazz Bar">
+<img src="public/11.jpg" width="31%" alt="Jazz Bar">
+<img src="public/12.jpg" width="31%" alt="Jazz Bar">
+<img src="public/13.jpg" width="31%" alt="Jazz Bar">
 
 <br><br>
 
