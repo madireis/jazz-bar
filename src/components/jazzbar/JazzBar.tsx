@@ -356,6 +356,13 @@ export default function JazzBar() {
           )}
           <span className="mx-2 h-4 w-px bg-dim" />
           <button
+            onClick={() => setMusicOpen((o) => !o)}
+            className={`rounded-md px-3 py-1.5 font-mono ${musicOpen ? "bg-amber/20 text-amber" : "text-gold hover:bg-amber/10"}`}
+            title="Open music picker (M)"
+          >
+            ♪ music
+          </button>
+          <button
             onClick={() => setSettings((s) => ({ ...s, ambientMuted: !s.ambientMuted }))}
             className={`rounded-md px-3 py-1.5 font-mono ${settings.ambientMuted ? "text-dim" : "text-gold"}`}
             title="Toggle ambience (A)"
