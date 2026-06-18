@@ -197,7 +197,7 @@ export default function JazzBar() {
       } else if (e.key === "Escape") {
         endSession();
       } else if (e.key === "m") {
-        setSettings((s) => ({ ...s, musicMuted: !s.musicMuted }));
+        setMusicOpen((o) => !o);
       } else if (e.key === "a") {
         setSettings((s) => ({ ...s, ambientMuted: !s.ambientMuted }));
       }
