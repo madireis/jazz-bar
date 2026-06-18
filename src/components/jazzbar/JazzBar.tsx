@@ -382,6 +382,8 @@ export default function JazzBar() {
       <div className="pointer-events-none fixed bottom-2 right-3 z-30 font-mono text-[10px] uppercase tracking-widest text-dim">
         space · start/pause &nbsp; m · music &nbsp; a · ambience &nbsp; esc · end
       </div>
+
+      <MusicPicker open={musicOpen} onClose={() => setMusicOpen(false)} muted={settings.musicMuted} />
     </div>
   );
 }
