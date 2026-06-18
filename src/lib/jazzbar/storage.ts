@@ -1,24 +1,37 @@
 const GROOVE_KEY = "jazzbar_groove";
 const SETTINGS_KEY = "jazzbar_settings";
 
+export interface AmbienceLevels {
+  rain: number;
+  fire: number;
+  mumbling: number;
+  wind: number;
+  vinyl: number;
+  cafe: number;
+}
+
 export interface JazzbarSettings {
   mainVolume: number;
-  fireplaceVolume: number;
-  rainVolume: number;
-  barMurmurVolume: number;
-  effectsEnabled: boolean;
+  musicVolume: number; // 0..100
   musicMuted: boolean;
   ambientMuted: boolean;
+  ambience: AmbienceLevels;
+  effectsEnabled: boolean;
+  shuffle: boolean;
+  lastTrackId: string | null;
+  lastWasPlaylist: boolean;
 }
 
 export const DEFAULT_SETTINGS: JazzbarSettings = {
   mainVolume: 60,
-  fireplaceVolume: 40,
-  rainVolume: 30,
-  barMurmurVolume: 25,
-  effectsEnabled: true,
+  musicVolume: 70,
   musicMuted: false,
   ambientMuted: false,
+  ambience: { rain: 0, fire: 0, mumbling: 0, wind: 0, vinyl: 0, cafe: 0 },
+  effectsEnabled: true,
+  shuffle: false,
+  lastTrackId: null,
+  lastWasPlaylist: false,
 };
 
 const isBrowser = () => typeof window !== "undefined";
@@ -38,7 +51,12 @@ export function loadSettings(): JazzbarSettings {
   try {
     const v = window.localStorage.getItem(SETTINGS_KEY);
     if (!v) return DEFAULT_SETTINGS;
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(v) };
+    const parsed = JSON.parse(v);
+    return {
+      ...DEFAULT_SETTINGS,
+      ...parsed,
+      ambience: { ...DEFAULT_SETTINGS.ambience, ...(parsed.ambience ?? {}) },
+    };
   } catch {
     return DEFAULT_SETTINGS;
   }
