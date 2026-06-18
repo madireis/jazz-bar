@@ -1,21 +1,34 @@
-// Curated jazz from YouTube. `id` is a video ID; `playlist` (optional) is a playlist ID.
+// Live Jazz Radio Streams
 export interface Track {
   id: string;
+  url: string;
   title: string;
   artist: string;
-  playlist?: string;
 }
 
-export const JAZZ_PLAYLIST_ID = "PLw-VjHDlEOgs658kAHR_LAaILBXb-s6Q5"; // Smooth Jazz mix
-export const JAZZ_PLAYLIST_LABEL = "Smooth Jazz · Late Night";
-
 export const TRACKS: Track[] = [
-  { id: "Dx_fKPBPYUI", title: "Relaxing Jazz Bar", artist: "Cozy Lounge" },
-  { id: "neV3EPgvZ3g", title: "Coffee Shop Jazz", artist: "Slow Cafe" },
-  { id: "RZJ0gA0V3F8", title: "Whiskey Jazz", artist: "Midnight Bar" },
-  { id: "fEvM-OUbaKs", title: "New York Jazz Lounge", artist: "After Hours" },
-  { id: "qH3fETPsqXU", title: "Rainy Night Jazz", artist: "Blue Mood" },
-  { id: "tNvh2w8lTes", title: "Smooth Saxophone", artist: "Velvet Sax" },
-  { id: "kgx4WGa0wuU", title: "Slow Piano Jazz", artist: "Quiet Keys" },
-  { id: "rnDqaVDXOnY", title: "Bourbon & Blues", artist: "Speakeasy" },
+  {
+    id: "jazz-king",
+    url: "https://jking.cdnstream1.com/b22139_128mp3",
+    title: "Jazz King",
+    artist: "Live Radio",
+  },
+  {
+    id: "swiss-jazz",
+    url: "https://livestreaming-node-4.srg-ssr.ch/srgssr/rsj/mp3/128",
+    title: "Radio Swiss Jazz",
+    artist: "Live Radio",
+  },
+  {
+    id: "knkx",
+    url: "https://knkx-live-a.edge.audiocdn.com/6285_256k",
+    title: "KNKX Jazz",
+    artist: "Live Radio",
+  },
+  {
+    id: "relaxing-jazz",
+    url: "http://stream-02-eu.relaxingjazz.com/stream/3/",
+    title: "Relaxing Jazz EU",
+    artist: "Live Radio",
+  },
 ];

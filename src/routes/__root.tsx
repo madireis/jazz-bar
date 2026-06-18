@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -78,18 +79,39 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Jazz Bar — A Cozy Focus Lounge" },
-      { name: "description", content: "A browser-based focus app themed as a cozy ASCII jazz lounge. Start a session and watch your bar slowly come to life." },
+      {
+        name: "description",
+        content:
+          "A browser-based focus app themed as a cozy ASCII jazz lounge. Start a session and watch your bar slowly come to life.",
+      },
       { property: "og:title", content: "Jazz Bar — A Cozy Focus Lounge" },
-      { property: "og:description", content: "A browser-based focus app themed as a cozy ASCII jazz lounge. Start a session and watch your bar slowly come to life." },
+      {
+        property: "og:description",
+        content:
+          "A browser-based focus app themed as a cozy ASCII jazz lounge. Start a session and watch your bar slowly come to life.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "Jazz Bar — A Cozy Focus Lounge" },
-      { name: "twitter:description", content: "A browser-based focus app themed as a cozy ASCII jazz lounge. Start a session and watch your bar slowly come to life." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/de9b9672-f8f0-4c7a-9ae7-fd5bfa18857c/id-preview-4447902b--0f23dbfd-b900-4280-80f1-07e58ec913a6.lovable.app-1781787626290.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/de9b9672-f8f0-4c7a-9ae7-fd5bfa18857c/id-preview-4447902b--0f23dbfd-b900-4280-80f1-07e58ec913a6.lovable.app-1781787626290.png" },
+      {
+        name: "twitter:description",
+        content:
+          "A browser-based focus app themed as a cozy ASCII jazz lounge. Start a session and watch your bar slowly come to life.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/de9b9672-f8f0-4c7a-9ae7-fd5bfa18857c/id-preview-4447902b--0f23dbfd-b900-4280-80f1-07e58ec913a6.lovable.app-1781787626290.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/de9b9672-f8f0-4c7a-9ae7-fd5bfa18857c/id-preview-4447902b--0f23dbfd-b900-4280-80f1-07e58ec913a6.lovable.app-1781787626290.png",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.json" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -105,9 +127,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  // Register service worker for PWA installation support
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .catch((err) => console.warn("SW registration failed:", err));
+    }
+  }, []);
+
   return (
     <html lang="en">
       <head>
+        <meta name="theme-color" content="#0d0a08" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <HeadContent />
       </head>
       <body>

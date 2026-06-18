@@ -1,14 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import vinylAsset from "@/assets/jazzbar/vinyl-player.mp4.asset.json";
-import { JAZZ_PLAYLIST_ID, JAZZ_PLAYLIST_LABEL, TRACKS, type Track } from "@/lib/jazzbar/playlist";
-import { loadYouTubeAPI, thumbUrl } from "@/lib/jazzbar/youtube";
+import { TRACKS } from "@/lib/jazzbar/playlist";
 import { AMBIENCE_LIST, getAmbience, type AmbienceKey } from "@/lib/jazzbar/ambience";
-import type { JazzbarSettings } from "@/lib/jazzbar/storage";
+import { fadeVolume } from "@/lib/jazzbar/sfx";
+import { loadHistory, type JazzbarSettings, type EffectToggles, type SessionLog } from "@/lib/jazzbar/storage";
 
-type Playing =
-  | { kind: "none" }
-  | { kind: "track"; trackIndex: number }
-  | { kind: "playlist" };
+type Playing = { kind: "none" } | { kind: "track"; trackIndex: number };
 
 interface Props {
   open: boolean;
@@ -17,218 +13,117 @@ interface Props {
   setSettings: (updater: (s: JazzbarSettings) => JazzbarSettings) => void;
 }
 
-function fmtTime(s: number) {
-  if (!isFinite(s) || s < 0) s = 0;
-  const m = Math.floor(s / 60);
-  const r = Math.floor(s % 60);
-  return `${m}:${String(r).padStart(2, "0")}`;
-}
+type TabKey = "music" | "ambience" | "effects" | "stats";
+
+const EFFECT_ITEMS: { key: keyof EffectToggles; label: string; emoji: string; desc: string }[] = [
+  { key: "crt", label: "CRT Filter", emoji: "📺", desc: "Retro scanlines & vignette" },
+  { key: "glow", label: "Warm Glow", emoji: "💡", desc: "Ambient light bleed" },
+  { key: "particles", label: "Particles", emoji: "✨", desc: "Smoke, fire, rain & notes" },
+  { key: "visualizer", label: "Visualizer", emoji: "🎵", desc: "Music-reactive particles" },
+];
 
 export default function MusicPicker({ open, onClose, settings, setSettings }: Props) {
-  const [tab, setTab] = useState<"music" | "ambience">("music");
+  const [tab, setTab] = useState<TabKey>("music");
   const [playing, setPlaying] = useState<Playing>({ kind: "none" });
-  const [apiReady, setApiReady] = useState(false);
-  const [apiError, setApiError] = useState(false);
+  const [streamError, setStreamError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [nowTitle, setNowTitle] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [duration, setDuration] = useState(0);
-  const [position, setPosition] = useState(0);
-  const [vinylRate, setVinylRate] = useState(1);
-  const [shuffleOrder, setShuffleOrder] = useState<number[]>([]);
-  const [shuffleCursor, setShuffleCursor] = useState(0);
+  const [history, setHistory] = useState<SessionLog[]>([]);
+  const [, setVinylRate] = useState(1);
+  const [newChannelUrl, setNewChannelUrl] = useState("");
 
-  const playerRef = useRef<any>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const allTracks = useMemo(() => {
+    return [...TRACKS, ...(settings.customChannels || [])];
+  }, [settings.customChannels]);
+
+  const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const restoredRef = useRef(false);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const fadeRafRef = useRef(0);
 
   const ambience = useMemo(() => getAmbience(), []);
 
-  // Preload YT API + warm thumbs
-  useEffect(() => {
-    let cancelled = false;
-    loadYouTubeAPI()
-      .then(() => !cancelled && setApiReady(true))
-      .catch(() => !cancelled && setApiError(true));
-    TRACKS.forEach((t) => {
-      const img = new Image();
-      img.src = thumbUrl(t.id);
-    });
-    return () => { cancelled = true; };
-  }, []);
-
   // Restore last selection ONCE when the picker is first opened
   useEffect(() => {
-    if (!open || restoredRef.current) return;
-    restoredRef.current = true;
-    if (settings.lastWasPlaylist) {
-      setPlaying({ kind: "playlist" });
-    } else if (settings.lastTrackId) {
-      const idx = TRACKS.findIndex((t) => t.id === settings.lastTrackId);
-      if (idx >= 0) setPlaying({ kind: "track", trackIndex: idx });
+    if (!open) return;
+    if (!restoredRef.current) {
+      restoredRef.current = true;
+      if (settings.lastTrackId) {
+        const idx = allTracks.findIndex((t) => t.id === settings.lastTrackId);
+        if (idx >= 0) setPlaying({ kind: "track", trackIndex: idx });
+      }
     }
-  }, [open, settings.lastTrackId, settings.lastWasPlaylist]);
+    // Load history whenever we open the picker to ensure it's fresh
+    setHistory(loadHistory());
+  }, [open, settings.lastTrackId, allTracks]);
+
+  // Removed connectToAnalyser because routing external radio streams into Web Audio API without CORS headers causes the browser to output silence.
 
   // Persist selection
   useEffect(() => {
-    if (playing.kind === "track") {
-      const id = TRACKS[playing.trackIndex].id;
+    if (playing.kind === "track" && playing.trackIndex < allTracks.length) {
+      const id = allTracks[playing.trackIndex].id;
       setSettings((s) => ({ ...s, lastTrackId: id, lastWasPlaylist: false }));
-    } else if (playing.kind === "playlist") {
-      setSettings((s) => ({ ...s, lastWasPlaylist: true }));
     }
-  }, [playing, setSettings]);
-
-  // Build/refresh shuffle order whenever shuffle is toggled on
-  useEffect(() => {
-    if (!settings.shuffle) return;
-    const order = TRACKS.map((_, i) => i).sort(() => Math.random() - 0.5);
-    setShuffleOrder(order);
-    setShuffleCursor(0);
-  }, [settings.shuffle]);
+  }, [playing, setSettings, allTracks]);
 
   const goToTrack = useCallback((index: number) => {
+    setStreamError(null);
     setPlaying({ kind: "track", trackIndex: index });
   }, []);
 
   const next = useCallback(() => {
     if (playing.kind !== "track") return;
-    if (settings.shuffle && shuffleOrder.length) {
-      const nc = (shuffleCursor + 1) % shuffleOrder.length;
-      setShuffleCursor(nc);
-      goToTrack(shuffleOrder[nc]);
-    } else {
-      goToTrack((playing.trackIndex + 1) % TRACKS.length);
-    }
-  }, [playing, settings.shuffle, shuffleOrder, shuffleCursor, goToTrack]);
+    goToTrack((playing.trackIndex + 1) % allTracks.length);
+  }, [playing, goToTrack, allTracks.length]);
 
   const prev = useCallback(() => {
     if (playing.kind !== "track") return;
-    if (settings.shuffle && shuffleOrder.length) {
-      const nc = (shuffleCursor - 1 + shuffleOrder.length) % shuffleOrder.length;
-      setShuffleCursor(nc);
-      goToTrack(shuffleOrder[nc]);
-    } else {
-      goToTrack((playing.trackIndex - 1 + TRACKS.length) % TRACKS.length);
-    }
-  }, [playing, settings.shuffle, shuffleOrder, shuffleCursor, goToTrack]);
+    goToTrack((playing.trackIndex - 1 + allTracks.length) % allTracks.length);
+  }, [playing, goToTrack, allTracks.length]);
 
-  // Create / update player when API ready & a selection is made
+  // Apply volume / mute
   useEffect(() => {
-    if (!apiReady || playing.kind === "none" || !containerRef.current) return;
-    setLoading(true);
-
-    const opts: any = {
-      height: "100%",
-      width: "100%",
-      playerVars: {
-        autoplay: 1,
-        modestbranding: 1,
-        rel: 0,
-        playsinline: 1,
-        mute: settings.musicMuted ? 1 : 0,
-      },
-      events: {
-        onReady: (e: any) => {
-          setLoading(false);
-          try {
-            e.target.setVolume(settings.musicVolume);
-            if (settings.musicMuted) e.target.mute(); else e.target.unMute();
-            e.target.playVideo();
-            setDuration(e.target.getDuration?.() ?? 0);
-            const d = e.target.getVideoData?.();
-            if (d?.title) setNowTitle(d.title);
-          } catch { /* noop */ }
-        },
-        onStateChange: (e: any) => {
-          // -1 unstarted, 0 ended, 1 playing, 2 paused, 3 buffering, 5 cued
-          setIsPlaying(e.data === 1);
-          if (e.data === 3) setLoading(true);
-          if (e.data === 1) {
-            setLoading(false);
-            try {
-              setDuration(e.target.getDuration?.() ?? 0);
-              const d = e.target.getVideoData?.();
-              if (d?.title) setNowTitle(d.title);
-            } catch { /* noop */ }
-          }
-          if (e.data === 0) {
-            // auto-next when a single track ends
-            if (playing.kind === "track") next();
-          }
-        },
-        onError: () => { setLoading(false); setApiError(true); },
-      },
-    };
-
-    if (playing.kind === "playlist") {
-      opts.playerVars.listType = "playlist";
-      opts.playerVars.list = JAZZ_PLAYLIST_ID;
-    } else {
-      opts.videoId = TRACKS[playing.trackIndex].id;
-    }
-
-    if (playerRef.current) {
-      try { playerRef.current.destroy(); } catch { /* noop */ }
-      playerRef.current = null;
-    }
-
-    const mount = document.createElement("div");
-    mount.className = "h-full w-full";
-    containerRef.current.innerHTML = "";
-    containerRef.current.appendChild(mount);
-
-    playerRef.current = new window.YT.Player(mount, opts);
-
-    return () => {
-      try { playerRef.current?.destroy(); } catch { /* noop */ }
-      playerRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiReady, playing]);
-
-  // Apply volume / mute changes live without rebuilding the player
-  useEffect(() => {
-    const p = playerRef.current;
-    if (!p) return;
-    try {
-      p.setVolume(settings.musicVolume);
-      if (settings.musicMuted) p.mute(); else p.unMute();
-    } catch { /* noop */ }
+    const a = audioRef.current;
+    if (!a) return;
+    a.volume = settings.musicVolume / 100;
+    a.muted = settings.musicMuted;
   }, [settings.musicVolume, settings.musicMuted]);
 
-  // Drive vinyl & poll seek position
+  // Drive vinyl rate with slow stop
   useEffect(() => {
-    if (!isPlaying) return;
     const v = videoRef.current;
+    if (!v) return;
+
     let raf = 0;
     let lastPoll = 0;
+
     const tick = (ts: number) => {
       try {
-        if (ts - lastPoll > 250) {
-          lastPoll = ts;
-          const t = playerRef.current?.getCurrentTime?.() ?? 0;
-          const d = playerRef.current?.getDuration?.() ?? 0;
-          setPosition(t);
-          if (d && d !== duration) setDuration(d);
-          const rate = 0.94 + 0.12 * (0.5 + 0.5 * Math.sin(t * 0.5));
-          setVinylRate(rate);
-          if (v) v.playbackRate = rate;
+        if (isPlaying) {
+          if (ts - lastPoll > 250) {
+            lastPoll = ts;
+            const rate = 0.94 + 0.12 * (0.5 + 0.5 * Math.sin(ts / 2000));
+            setVinylRate(rate);
+            v.playbackRate = rate;
+          }
+          if (v.paused) v.play().catch(() => {});
+        } else {
+          // Slow down and stop (browsers clamp playbackRate to ~0.06, so we stop at 0.1)
+          if (v.playbackRate > 0.1) {
+            v.playbackRate -= 0.01;
+          } else if (!v.paused) {
+            v.pause();
+          }
         }
-      } catch { /* noop */ }
+      } catch {
+        /* noop */
+      }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [isPlaying, duration]);
-
-  // Pause/resume decorative vinyl video with playback
-  useEffect(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    if (isPlaying) v.play().catch(() => {});
-    else v.pause();
   }, [isPlaying]);
 
   // Ambience: apply current levels & mute to engine
@@ -242,48 +137,52 @@ export default function MusicPicker({ open, onClose, settings, setSettings }: Pr
   }, [open, settings.ambience, settings.ambientMuted, ambience]);
 
   const stopMusic = () => {
-    try { playerRef.current?.stopVideo(); } catch { /* noop */ }
+    const a = audioRef.current;
+    if (a) {
+      // Cancel any existing fade
+      cancelAnimationFrame(fadeRafRef.current);
+      fadeRafRef.current = fadeVolume(a, 0, 400, () => {
+        a.pause();
+        a.currentTime = 0;
+        a.volume = settings.musicVolume / 100;
+      });
+    }
     setPlaying({ kind: "none" });
     setIsPlaying(false);
-    setNowTitle(null);
-    setPosition(0);
-    setDuration(0);
   };
 
   const togglePlay = () => {
-    const p = playerRef.current;
-    if (!p) return;
-    try {
-      const state = p.getPlayerState?.();
-      if (state === 1) p.pauseVideo(); else p.playVideo();
-    } catch { /* noop */ }
+    const a = audioRef.current;
+    if (!a) return;
+    cancelAnimationFrame(fadeRafRef.current);
+    if (isPlaying) {
+      // Fade out then pause
+      fadeRafRef.current = fadeVolume(a, 0, 500, () => {
+        a.pause();
+        a.volume = settings.musicVolume / 100;
+      });
+    } else {
+      // Start quiet and fade in
+      a.volume = 0;
+      a.play().catch(() => {});
+      fadeRafRef.current = fadeVolume(a, settings.musicVolume / 100, 500);
+    }
   };
 
-  const seekTo = (pct: number) => {
-    const p = playerRef.current;
-    if (!p || !duration) return;
-    try {
-      const target = (pct / 100) * duration;
-      p.seekTo(target, true);
-      setPosition(target);
-    } catch { /* noop */ }
-  };
-
-  const retry = () => {
-    setApiError(false);
-    setApiReady(false);
-    loadYouTubeAPI().then(() => setApiReady(true)).catch(() => setApiError(true));
-  };
+  // Listen for N key to switch tracks
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement) return;
+      if (e.key === "n" && playing.kind === "track") {
+        next();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [playing, next]);
 
   const headerTitle =
-    nowTitle ??
-    (playing.kind === "track"
-      ? TRACKS[playing.trackIndex].title
-      : playing.kind === "playlist"
-        ? JAZZ_PLAYLIST_LABEL
-        : "Pick a record");
-
-  const progressPct = duration > 0 ? Math.min(100, (position / duration) * 100) : 0;
+    playing.kind === "track" && playing.trackIndex < allTracks.length ? allTracks[playing.trackIndex].title : "Pick a station";
 
   return (
     <aside
@@ -293,7 +192,9 @@ export default function MusicPicker({ open, onClose, settings, setSettings }: Pr
     >
       <header className="flex items-start justify-between border-b border-amber/15 px-5 py-4">
         <div className="min-w-0 flex-1 pr-3">
-          <div className="font-mono text-xs uppercase tracking-[0.4em] text-amber/70">now spinning</div>
+          <div className="font-mono text-xs uppercase tracking-[0.4em] text-amber/70">
+            now streaming
+          </div>
           <div className="mt-1 truncate font-sans text-lg text-cream" title={headerTitle}>
             {headerTitle}
           </div>
@@ -302,13 +203,10 @@ export default function MusicPicker({ open, onClose, settings, setSettings }: Pr
               buffering…
             </div>
           )}
-          {apiError && (
-            <button
-              onClick={retry}
-              className="mt-1 font-mono text-[10px] uppercase tracking-widest text-fire underline"
-            >
-              connection issue — retry
-            </button>
+          {streamError && (
+            <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-fire">
+              {streamError}
+            </div>
           )}
         </div>
         <button
@@ -320,20 +218,36 @@ export default function MusicPicker({ open, onClose, settings, setSettings }: Pr
         </button>
       </header>
 
+      <audio
+        ref={audioRef}
+        src={playing.kind === "track" && playing.trackIndex < allTracks.length ? allTracks[playing.trackIndex].url : ""}
+        autoPlay
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onWaiting={() => setLoading(true)}
+        onPlaying={() => setLoading(false)}
+        onError={(e) => {
+          setLoading(false);
+          const err = e.currentTarget.error;
+          // Ignore abort errors which happen during src change
+          if (err && err.code !== 20) {
+            setStreamError("Stream failed to load.");
+          }
+        }}
+      />
+
       {/* Tabs */}
       <div className="flex border-b border-amber/15 px-3">
-        {(["music", "ambience"] as const).map((k) => (
+        {(["music", "ambience", "effects", "stats"] as const).map((k) => (
           <button
             key={k}
             onClick={() => setTab(k)}
-            className={`relative flex-1 py-2 font-mono text-[11px] uppercase tracking-[0.35em] transition-colors ${
+            className={`relative flex-1 py-2 font-mono text-[10px] uppercase tracking-[0.25em] transition-colors ${
               tab === k ? "text-amber" : "text-dim hover:text-cream"
             }`}
           >
             {k}
-            {tab === k && (
-              <span className="absolute inset-x-3 -bottom-px h-px bg-amber" />
-            )}
+            {tab === k && <span className="absolute inset-x-2 -bottom-px h-px bg-amber" />}
           </button>
         ))}
       </div>
@@ -344,15 +258,14 @@ export default function MusicPicker({ open, onClose, settings, setSettings }: Pr
           <div className="relative mx-auto mt-4 aspect-square w-[48%] overflow-hidden rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.6)]">
             <video
               ref={videoRef}
-              src={vinylAsset.url}
+              src="/vinyl.mp4"
               autoPlay
               loop
               muted
               playsInline
-              className={`h-full w-full object-cover ${isPlaying ? "vinyl-spin" : ""}`}
+              className="h-full w-full object-cover"
               style={{
                 imageRendering: "pixelated",
-                animationDuration: isPlaying ? `${(6 / vinylRate).toFixed(2)}s` : undefined,
               }}
             />
             {loading && (
@@ -362,37 +275,9 @@ export default function MusicPicker({ open, onClose, settings, setSettings }: Pr
             )}
           </div>
 
-          {/* Embedded player (kept mounted but tiny — controls live below) */}
-          <div className="mx-5 mt-4 h-0 overflow-hidden">
-            <div ref={containerRef} className="h-full w-full" />
-          </div>
-
           {/* Transport controls */}
-          <div className="mx-5 mt-3 space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="w-10 font-mono text-[10px] text-dim">{fmtTime(position)}</span>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                step={0.1}
-                value={progressPct}
-                onChange={(e) => seekTo(parseFloat(e.target.value))}
-                disabled={!duration || playing.kind === "none"}
-                className="flex-1 accent-amber"
-                aria-label="Seek"
-              />
-              <span className="w-10 text-right font-mono text-[10px] text-dim">{fmtTime(duration)}</span>
-            </div>
-
+          <div className="mx-5 mt-6 space-y-2">
             <div className="flex items-center justify-center gap-3">
-              <button
-                onClick={() => setSettings((s) => ({ ...s, shuffle: !s.shuffle }))}
-                className={`rounded-md px-2 py-1 font-mono text-xs transition-colors ${settings.shuffle ? "bg-amber/20 text-amber" : "text-cream/70 hover:text-amber"}`}
-                title="Shuffle"
-              >
-                🔀
-              </button>
               <button
                 onClick={prev}
                 disabled={playing.kind !== "track"}
@@ -413,7 +298,7 @@ export default function MusicPicker({ open, onClose, settings, setSettings }: Pr
                 onClick={next}
                 disabled={playing.kind !== "track"}
                 className="rounded-md px-3 py-1 text-cream/80 transition-colors hover:text-amber disabled:opacity-30"
-                aria-label="Next"
+                aria-label="Next (N)"
               >
                 ⏭
               </button>
@@ -427,81 +312,142 @@ export default function MusicPicker({ open, onClose, settings, setSettings }: Pr
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pt-2">
               <button
                 onClick={() => setSettings((s) => ({ ...s, musicMuted: !s.musicMuted }))}
                 className="w-6 text-center text-cream/80 transition-colors hover:text-amber"
                 title={settings.musicMuted ? "Unmute" : "Mute"}
               >
-                {settings.musicMuted || settings.musicVolume === 0 ? "🔇" : settings.musicVolume < 40 ? "🔈" : "🔊"}
+                {settings.musicMuted || settings.musicVolume === 0
+                  ? "🔇"
+                  : settings.musicVolume < 40
+                    ? "🔈"
+                    : "🔊"}
               </button>
               <input
                 type="range"
                 min={0}
                 max={100}
                 value={settings.musicVolume}
-                onChange={(e) => setSettings((s) => ({ ...s, musicVolume: parseInt(e.target.value, 10) }))}
+                onChange={(e) =>
+                  setSettings((s) => ({ ...s, musicVolume: parseInt(e.target.value, 10) }))
+                }
                 className="flex-1 accent-amber"
                 aria-label="Music volume"
               />
-              <span className="w-8 text-right font-mono text-[10px] text-dim">{settings.musicVolume}</span>
+              <span className="w-8 text-right font-mono text-[10px] text-dim">
+                {settings.musicVolume}
+              </span>
             </div>
           </div>
 
-          {/* Playlist button */}
-          <button
-            onClick={() => setPlaying({ kind: "playlist" })}
-            className={`mx-5 mt-3 rounded-lg border px-4 py-2.5 text-left transition-colors ${
-              playing.kind === "playlist"
-                ? "border-amber bg-amber/15 text-amber"
-                : "border-amber/30 text-cream hover:bg-amber/10"
-            }`}
-          >
-            <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-gold/80">playlist</div>
-            <div className="mt-0.5 font-sans text-sm">▶ {JAZZ_PLAYLIST_LABEL}</div>
-          </button>
-
-          {/* Tracks */}
-          <div className="mt-3 min-h-0 flex-1 overflow-y-auto px-3 pb-4">
-            <div className="px-2 pb-2 font-mono text-[10px] uppercase tracking-[0.3em] text-dim">tracks</div>
+          {/* Live Stations */}
+          <div className="mt-5 min-h-0 flex-1 overflow-y-auto px-3 pb-4">
+            <div className="px-2 pb-2 font-mono text-[10px] uppercase tracking-[0.3em] text-dim">
+              live stations
+            </div>
             <ul className="flex flex-col gap-1">
-              {TRACKS.map((t, i) => {
+              {allTracks.map((t, i) => {
                 const active = playing.kind === "track" && playing.trackIndex === i;
+                const isCustom = i >= TRACKS.length;
                 return (
-                  <li key={t.id}>
+                  <li key={t.id} className="relative group">
                     <button
                       onClick={() => goToTrack(i)}
                       className={`flex w-full items-center gap-3 rounded-md p-2 text-left transition-colors ${
-                        active ? "bg-amber/15 text-amber" : "text-cream/85 hover:bg-amber/10 hover:text-amber"
+                        active
+                          ? "bg-amber/15 text-amber"
+                          : "text-cream/85 hover:bg-amber/10 hover:text-amber"
                       }`}
                     >
-                      <img
-                        src={thumbUrl(t.id)}
-                        alt=""
-                        loading="lazy"
-                        width={80}
-                        height={45}
-                        className="h-12 w-20 flex-shrink-0 rounded object-cover"
-                      />
-                      <span className="min-w-0 flex-1">
+                      <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded bg-black/40 font-mono text-lg text-dim">
+                        📻
+                      </div>
+                      <span className="min-w-0 flex-1 pr-6">
                         <span className="block truncate font-sans text-sm">{t.title}</span>
                         <span className="block truncate font-mono text-[10px] uppercase tracking-widest text-dim">
                           {t.artist}
                         </span>
                       </span>
-                      {active && isPlaying && <span className="font-mono text-xs text-amber">♪</span>}
+                      {active && isPlaying && (
+                        <span className="font-mono text-xs text-amber">♪</span>
+                      )}
                     </button>
+                    {isCustom && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (playing.kind === "track" && playing.trackIndex === i) {
+                            stopMusic();
+                          } else if (playing.kind === "track" && playing.trackIndex > i) {
+                            setPlaying({ kind: "track", trackIndex: playing.trackIndex - 1 });
+                          }
+                          setSettings(s => ({
+                            ...s,
+                            customChannels: (s.customChannels || []).filter(c => c.id !== t.id)
+                          }));
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 text-dim hover:text-fire transition-colors"
+                        title="Remove custom station"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </li>
                 );
               })}
             </ul>
+
+            <div className="mt-4 px-2">
+              <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-dim mb-2">
+                add custom station
+              </div>
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!newChannelUrl.trim()) return;
+                  const newId = "custom-" + Date.now();
+                  setSettings(s => ({
+                    ...s,
+                    customChannels: [
+                      ...(s.customChannels || []),
+                      {
+                        id: newId,
+                        title: "Custom Station " + ((s.customChannels?.length || 0) + 1),
+                        artist: "User Added",
+                        url: newChannelUrl.trim()
+                      }
+                    ]
+                  }));
+                  setNewChannelUrl("");
+                }}
+                className="flex gap-2"
+              >
+                <input
+                  type="url"
+                  placeholder="Paste audio URL (.mp3, stream, etc)"
+                  value={newChannelUrl}
+                  onChange={(e) => setNewChannelUrl(e.target.value)}
+                  className="flex-1 rounded-md border border-amber/10 bg-black/20 px-3 py-1.5 font-sans text-xs text-cream outline-none transition placeholder:text-dim hover:border-amber/30 focus:border-amber focus:bg-black/40"
+                />
+                <button
+                  type="submit"
+                  disabled={!newChannelUrl.trim()}
+                  className="rounded-md bg-amber/10 px-3 py-1.5 font-mono text-xs text-amber transition hover:bg-amber hover:text-[oklch(0.12_0.012_50)] disabled:opacity-50 disabled:hover:bg-amber/10 disabled:hover:text-amber"
+                >
+                  +
+                </button>
+              </form>
+            </div>
           </div>
         </div>
-      ) : (
+      ) : tab === "ambience" ? (
         // Ambience tab
         <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex items-center justify-between px-5 pt-4">
-            <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-dim">ambience mixer</div>
+            <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-dim">
+              ambience mixer
+            </div>
             <button
               onClick={() => setSettings((s) => ({ ...s, ambientMuted: !s.ambientMuted }))}
               className={`rounded-md px-2 py-1 font-mono text-xs transition-colors ${settings.ambientMuted ? "text-dim" : "text-amber"}`}
@@ -553,17 +499,178 @@ export default function MusicPicker({ open, onClose, settings, setSettings }: Pr
                 );
               })}
             </ul>
-            <button
-              onClick={() =>
-                setSettings((s) => ({
-                  ...s,
-                  ambience: { rain: 0, fire: 0, mumbling: 0, wind: 0, vinyl: 0, cafe: 0 },
-                }))
-              }
-              className="mt-4 w-full rounded-md border border-amber/20 px-3 py-2 font-mono text-[11px] uppercase tracking-widest text-cream/70 transition-colors hover:bg-amber/10 hover:text-amber"
-            >
-              reset mix
-            </button>
+          </div>
+        </div>
+      ) : tab === "effects" ? (
+        // Effects tab
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex items-center justify-between px-5 pt-4">
+            <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-dim">
+              visual effects & theme
+            </div>
+          </div>
+          <div className="mt-2 min-h-0 flex-1 overflow-y-auto px-5 pb-4">
+            
+            {/* Theme Selector */}
+            <div className="mt-2 mb-4 rounded-lg border border-amber/10 bg-black/20 p-3">
+              <div className="mb-2 font-mono text-[10px] uppercase tracking-widest text-dim">color theme</div>
+              <div className="grid grid-cols-2 gap-2">
+                {(["classic", "midnight", "matcha", "neon"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setSettings(s => ({ ...s, theme: t }))}
+                    className={`rounded text-xs font-mono py-1.5 transition-colors ${
+                      settings.theme === t 
+                        ? "bg-amber/20 text-amber border border-amber/30" 
+                        : "bg-black/30 text-cream/60 border border-transparent hover:text-cream hover:bg-black/50"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between mt-2 mb-2">
+              <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-dim">
+                toggles
+              </div>
+              <button
+                onClick={() => {
+                  const allOn = Object.values(settings.effects).every(Boolean);
+                  const val = !allOn;
+                  setSettings((s) => ({
+                    ...s,
+                    effects: { crt: val, glow: val, particles: val, visualizer: val },
+                  }));
+                }}
+                className={`rounded-md px-2 py-1 font-mono text-[10px] transition-colors ${
+                  Object.values(settings.effects).every(Boolean) ? "text-amber" : "text-dim"
+                }`}
+              >
+                {Object.values(settings.effects).every(Boolean) ? "all on" : "all off"}
+              </button>
+            </div>
+
+            <ul className="flex flex-col gap-3">
+              {EFFECT_ITEMS.map(({ key, label, emoji, desc }) => {
+                const enabled = settings.effects[key];
+                return (
+                  <li key={key} className="rounded-lg border border-amber/10 bg-black/20 px-4 py-3">
+                    <button
+                      onClick={() =>
+                        setSettings((s) => ({
+                          ...s,
+                          effects: { ...s.effects, [key]: !enabled },
+                        }))
+                      }
+                      className="flex w-full items-center justify-between text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{emoji}</span>
+                        <div>
+                          <div className="font-sans text-sm text-cream">{label}</div>
+                          <div className="font-mono text-[10px] text-dim">{desc}</div>
+                        </div>
+                      </div>
+                      {/* Toggle switch */}
+                      <div
+                        className={`relative h-6 w-11 rounded-full transition-colors ${
+                          enabled ? "bg-amber/50" : "bg-dim/30"
+                        }`}
+                      >
+                        <div
+                          className={`absolute top-0.5 h-5 w-5 rounded-full shadow transition-all ${
+                            enabled ? "left-[22px] bg-amber" : "left-0.5 bg-cream/60"
+                          }`}
+                        />
+                      </div>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Shortcuts hint */}
+            <div className="mt-6 rounded-lg border border-amber/8 bg-black/15 px-4 py-3">
+              <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-dim">
+                keyboard shortcuts
+              </div>
+              <div className="mt-2 space-y-1 font-mono text-[11px] text-cream/70">
+                <div>
+                  <span className="inline-block w-16 text-amber">Space</span> Start / Pause timer
+                </div>
+                <div>
+                  <span className="inline-block w-16 text-amber">M</span> Toggle music panel
+                </div>
+                <div>
+                  <span className="inline-block w-16 text-amber">N</span> Next station
+                </div>
+                <div>
+                  <span className="inline-block w-16 text-amber">A</span> Toggle ambience
+                </div>
+                <div>
+                  <span className="inline-block w-16 text-amber">F</span> Fullscreen
+                </div>
+                <div>
+                  <span className="inline-block w-16 text-amber">Esc</span> End session
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        // Stats tab
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex items-center justify-between px-5 pt-4">
+            <div className="font-mono text-[10px] uppercase tracking-[0.3em] text-dim">
+              productivity analytics
+            </div>
+          </div>
+          <div className="mt-2 min-h-0 flex-1 overflow-y-auto px-5 pb-4">
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <div className="rounded-lg border border-amber/10 bg-black/20 p-4 text-center">
+                <div className="font-sans text-3xl font-bold text-amber">
+                  {history.length}
+                </div>
+                <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-dim">
+                  Total Sessions
+                </div>
+              </div>
+              <div className="rounded-lg border border-amber/10 bg-black/20 p-4 text-center">
+                <div className="font-sans text-3xl font-bold text-amber">
+                  {Math.round(history.reduce((acc, l) => acc + l.durationMinutes, 0) / 60 * 10) / 10}h
+                </div>
+                <div className="mt-1 font-mono text-[10px] uppercase tracking-widest text-dim">
+                  Deep Work
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 font-mono text-[10px] uppercase tracking-[0.3em] text-dim">
+              recent sessions
+            </div>
+            {history.length === 0 ? (
+              <div className="mt-4 text-center font-sans text-sm text-dim">
+                No sessions completed yet.
+              </div>
+            ) : (
+              <ul className="mt-3 flex flex-col gap-2">
+                {history.slice(0, 20).map((log, i) => (
+                  <li key={i} className="rounded-lg border border-amber/5 bg-black/10 px-3 py-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 pr-2">
+                        <div className="font-sans text-sm text-cream">{log.task}</div>
+                        <div className="font-mono text-[10px] text-dim">
+                          {new Date(log.timestamp).toLocaleDateString()} at {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                      <div className="font-mono text-xs text-amber">{log.durationMinutes}m</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       )}
