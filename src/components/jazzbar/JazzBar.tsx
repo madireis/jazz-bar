@@ -383,7 +383,12 @@ export default function JazzBar() {
         space · start/pause &nbsp; m · music &nbsp; a · ambience &nbsp; esc · end
       </div>
 
-      <MusicPicker open={musicOpen} onClose={() => setMusicOpen(false)} muted={settings.musicMuted} />
+      <MusicPicker
+        open={musicOpen}
+        onClose={() => setMusicOpen(false)}
+        settings={settings}
+        setSettings={(updater) => setSettings((s) => updater(s))}
+      />
     </div>
   );
 }
