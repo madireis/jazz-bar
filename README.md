@@ -132,7 +132,7 @@ One click and Jazz Bar lives on your device.
 ### Clone
 
 ```bash
-git clone https://github.com/yourusername/jazz-bar.git
+git clone https://github.com/madireis/jazz-bar.git
 cd jazz-bar
 ```
 
