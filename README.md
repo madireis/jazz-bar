@@ -151,7 +151,7 @@ npm run dev
 Open:
 
 ```text
-http://localhost:5173
+http://localhost:8080
 ```
 
 Pour yourself a drink.
