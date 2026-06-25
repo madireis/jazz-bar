@@ -1,16 +1,16 @@
 <div align="center">
 
-# 🎷 JAZZ BAR
+# 🎷 JAZZ BAR: Cozy Pomodoro Focus Timer & Ambient Jazz Lounge
 
-### *A Late-Night Lounge for Deep Focus*
+### *A Late-Night Virtual Café & Aesthetic Study Tool for Deep Focus*
 
 *Rain tapping against the window. A vinyl record spinning softly. The fireplace crackling in the corner. One more task before closing time.*
 
 <br>
 
-<img src="public/11.jpg" width="31%" alt="Jazz Bar">
-<img src="public/12.jpg" width="31%" alt="Jazz Bar">
-<img src="public/13.jpg" width="31%" alt="Jazz Bar">
+<img src="public/11.jpg" width="31%" alt="Jazz Bar pixel art aesthetic pomodoro focus timer dashboard">
+<img src="public/12.jpg" width="31%" alt="Jazz Bar customized background sound mixer and lofi radio interface">
+<img src="public/13.jpg" width="31%" alt="Jazz Bar customizable daily productivity receipt history log">
 
 <br><br>
 
@@ -21,22 +21,19 @@
 
 <br>
 
-### 🍷 Productivity shouldn't feel like work.
+### 🍷 Productivity shouldn't feel like work. An immersive alternative to traditional productivity apps.
 
 </div>
 
 ---
 
-## 🌙 The Story
+## 🌙 The Story: Why a Jazz Café Focus Timer?
 
-Most productivity apps feel like spreadsheets wearing a timer.
+Most productivity apps feel like spreadsheets wearing a timer. 
 
-**Jazz Bar** takes a different approach.
+**Jazz Bar** takes a completely different approach. It is a digital jazz lounge and interactive pomodoro web app built for developers, students, and night owls who focus better when the atmosphere feels alive.
 
-It's a digital jazz lounge built for people who focus better when the atmosphere feels alive.
-
-Instead of cold dashboards and endless notifications, you get:
-
+Instead of cold dashboards and endless notifications, you get a cozy, lofi workspace:
 - 🎹 Soft jazz drifting through the room
 - 🌧️ Rain rolling across the windows
 - 🔥 A warm fireplace in the background
@@ -46,155 +43,113 @@ Open the app, disappear into the music, and let the hours melt away.
 
 ---
 
-## ✨ What Makes It Special
+## ✨ Features: Immersive Ambient Sound Mixer & Productivity Tracker
 
-### 🎷 Live Jazz Atmosphere
-
-Transform your workspace into a cozy late-night bar.
-
-Every visual element is designed to create calm, focus, and immersion.
+### 🎷 Live Jazz & Café Atmosphere
+Transform your remote workspace into a cozy late-night bar. Every visual element is designed to cultivate calm, deep focus, and total immersion.
 
 ---
 
-### 🎵 Built-In Jazz & Lo-Fi Radio
-
-No need to open Spotify.
-
-Switch between carefully selected stations and let the music carry your session.
+### 🎵 Built-In Jazz & Lo-Fi Radio Streamer
+No need to open Spotify or external tabs. Switch between carefully selected internet radio stations and let the background music carry your study or coding session.
 
 ---
 
-### 🌧️ Dynamic Ambience Mixer
+### 🌧️ Dynamic Background Ambience Mixer
+Build your perfect auditory environment for work or relaxation. Mix and match layers of sound loops:
+- Realistic rain sounds
+- Crackling fireplace
+- Low bar chatter
+- Ambient room white noise
 
-Build your perfect environment.
-
-Mix and match:
-
-- Rain
-- Fireplace
-- Bar chatter
-- Ambient room noise
-
-Each sound has its own volume control.
+Each atmospheric sound layer features its own independent volume control.
 
 ---
 
-### ⏳ Beautiful Focus Sessions
-
-Work and break cycles flow naturally through the experience.
-
-No harsh interruptions.
-
-Just smooth transitions and subtle visual feedback.
+### ⏳ Beautiful Pomodoro Focus Sessions
+Work and break intervals flow naturally through the application interface. There are no harsh alarm interruptions—just smooth visual transitions and subtle aesthetic feedback.
 
 ---
 
-### 🌙 Zen Mode
-
-Press **Z** and everything fades away.
-
-No menus.
-
-No buttons.
-
-No distractions.
-
-Just you, the music, and the timer.
+### 🌙 Distraction-Free Zen Mode
+Press **Z** and everything fades away. No menus. No buttons. No UI distractions. Just you, the ambient background music, and the simple running countdown timer.
 
 ---
 
-### 🧾 Daily Receipt
-
-Every day ends with a receipt from the bar.
-
-Track:
-
-- Focused minutes
-- Sessions completed
-- Daily productivity streaks
-
-A small ritual that makes progress feel rewarding.
+### 🧾 Daily Productivity Receipt Log
+Every work session ends with a custom retro receipt from the bar. Track your completed focus minutes, total intervals finished, and daily productivity streaks through a rewarding daily ritual.
 
 ---
 
-### 📱 Install Like a Native App
-
-Available anywhere.
-
-Desktop. Laptop. Tablet. Phone.
-
-One click and Jazz Bar lives on your device.
+### 📱 Installable Progressive Web App (PWA)
+Available across all your platforms. Access your workspace on Desktop, Laptop, Tablet, or Phone. One click and Jazz Bar installs directly as a native application on your device storage.
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started: How to Run Locally
 
-### Clone
+Follow these quick installation commands to set up the interactive focus lounge on your local server.
 
+### Clone the Repository
 ```bash
 git clone https://github.com/madireis/jazz-bar.git
 cd jazz-bar
 ```
 
-### Install
-
+### Install Dependencies
 ```bash
 npm install
 ```
 
-### Start
-
+### Start the Local Development Server
 ```bash
 npm run dev
 ```
 
-Open:
-
+Open your local browser to:
 ```text
 http://localhost:8080
 ```
 
-Pour yourself a drink.
-
-The lounge is open.
+Pour yourself a drink. The lounge is open.
 
 ---
 
-## ⌨️ Controls
+## ⌨️ Application Shortcut Controls
 
-| Key | Action |
+| Key | Interactive Web App Action |
 |------|---------|
-| `Space` | Start / Pause Session |
-| `Z` | Toggle Zen Mode |
-| `M` | Open Music Picker |
-| `A` | Toggle Ambience |
-| `F` | Fullscreen |
-| `Esc` | End Session |
+| `Space` | Start / Pause Current Timer Session |
+| `Z` | Toggle Distraction-Free Zen Mode |
+| `M` | Open Background Music Picker Panel |
+| `A` | Toggle Dynamic Ambience Loops |
+| `F` | Toggle Fullscreen Workspace Mode |
+| `Esc` | Instantly End Current Session |
 
 ---
 
-## 🛠 Built With
+## 🛠 Built With a Modern Web Stack
 
 ```txt
-⚛ React 19
-⚡ Vite
-🎨 Tailwind CSS v4
-🧭 TanStack Router
-🔊 Custom Audio Engine
-📱 Progressive Web App
+⚛ React 19 Frontend Library
+⚡ Vite Build Tooling
+🎨 Tailwind CSS v4 Utility Framework
+🧭 TanStack Router Navigation
+🔊 Custom Web Audio Engine API
+📱 Progressive Web App (PWA) Architecture
 ```
 
 ---
 
-## 🎯 Perfect For
+## 🎯 Perfect For Keyword Pursuits
 
 ```txt
-☕ Students
-💻 Developers
-📝 Writers
-🎨 Designers
-📚 Researchers
-🌙 Night Owls
+☕ Remote Students & Online Learners
+💻 Software Developers & Programming Teams
+📝 Creative Writers & Essayists
+🎨 UI/UX Designers & Digital Artists
+📚 Academic Researchers & Technical Authors
+🌙 Night Owls & Midnight Workers
 ```
 
 ---
